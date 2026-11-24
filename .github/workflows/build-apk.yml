@@ -7,7 +7,7 @@ on:
       - "arena/*"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -65,7 +65,7 @@ jobs:
         run: |
           mkdir -p build
           set +e
-          ./Godot_v${GODOT_VERSION}-${GODOT_STATUS}_linux.x86_64 --headless --export-release "Android" build/salt-and-iron.apk > export.log 2>&1
+          ./Godot_v${GODOT_VERSION}-${GODOT_STATUS}_linux.x86_64 --headless --export-debug "Android" build/salt-and-iron.apk > export.log 2>&1
           echo "export exit: $?" >> export.log
           echo "--- env ---" >> export.log
           env | grep -i -E "android|java" >> export.log || true
@@ -97,3 +97,13 @@ jobs:
             export.log
             import.log
           if-no-files-found: ignore
+
+      - name: Push logs to ci-logs branch
+        if: failure()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b ci-logs || git checkout ci-logs
+          git add export.log import.log || true
+          git commit -m "CI logs from run ${{ github.run_id }}" || true
+          git push origin ci-logs || true
