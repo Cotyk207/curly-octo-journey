@@ -54,6 +54,11 @@ jobs:
           mkdir -p ~/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_STATUS}
           wget -q "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-${GODOT_STATUS}/Godot_v${GODOT_VERSION}-${GODOT_STATUS}_export_templates.tpz"
           unzip -q "Godot_v${GODOT_VERSION}-${GODOT_STATUS}_export_templates.tpz" -d ~/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_STATUS}
+          # tpz contains a templates/ subfolder; Godot expects files directly in 4.3.stable/
+          if [ -d ~/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_STATUS}/templates ]; then
+            mv ~/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_STATUS}/templates/* ~/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_STATUS}/
+            rmdir ~/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_STATUS}/templates
+          fi
           ls ~/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_STATUS} | head -n 20
 
       - name: Import project
