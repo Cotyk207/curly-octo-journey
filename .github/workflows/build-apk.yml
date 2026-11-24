@@ -1,0 +1,123 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "arena/*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GODOT_VERSION: "4.3"
+      GODOT_STATUS: "stable"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install Android SDK packages
+        run: |
+          set -e
+          export ANDROID_HOME="${ANDROID_HOME:-/usr/local/lib/android-sdk}"
+          export ANDROID_SDK_ROOT="$ANDROID_HOME"
+          export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
+          echo "ANDROID_HOME=$ANDROID_HOME" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> "$GITHUB_ENV"
+          echo "PATH=$PATH" >> "$GITHUB_ENV"
+          which sdkmanager || ls "$ANDROID_HOME/cmdline-tools/latest/bin" || true
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0" "cmdline-tools;latest"
+          sdkmanager --list_installed | head -n 30
+
+      - name: Create debug keystore
+        run: |
+          mkdir -p ~/.android
+          keytool -genkeypair -v -keystore ~/.android/debug.keystore -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=Android Debug,O=Android,C=US"
+
+      - name: Download Godot and export templates
+        run: |
+          set -e
+          wget -q "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-${GODOT_STATUS}/Godot_v${GODOT_VERSION}-${GODOT_STATUS}_linux.x86_64.zip"
+          unzip -q "Godot_v${GODOT_VERSION}-${GODOT_STATUS}_linux.x86_64.zip"
+          chmod +x "Godot_v${GODOT_VERSION}-${GODOT_STATUS}_linux.x86_64"
+          mkdir -p ~/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_STATUS}
+          wget -q "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-${GODOT_STATUS}/Godot_v${GODOT_VERSION}-${GODOT_STATUS}_export_templates.tpz"
+          unzip -q "Godot_v${GODOT_VERSION}-${GODOT_STATUS}_export_templates.tpz" -d ~/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_STATUS}
+          # tpz contains a templates/ subfolder; Godot expects files directly in 4.3.stable/
+          if [ -d ~/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_STATUS}/templates ]; then
+            mv ~/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_STATUS}/templates/* ~/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_STATUS}/
+            rmdir ~/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_STATUS}/templates
+          fi
+          ls ~/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_STATUS} | head -n 20
+
+      - name: Import project
+        run: |
+          ./Godot_v${GODOT_VERSION}-${GODOT_STATUS}_linux.x86_64 --headless --import 2>&1 | tee import.log
+          echo "import exit: ${PIPESTATUS[0]}" | tee -a import.log
+
+      - name: Export APK
+        run: |
+          mkdir -p build
+          set +e
+          ./Godot_v${GODOT_VERSION}-${GODOT_STATUS}_linux.x86_64 --headless --export-debug "Android" build/salt-and-iron.apk > export.log 2>&1
+          echo "export exit: $?" >> export.log
+          echo "--- env ---" >> export.log
+          env | grep -i -E "android|java" >> export.log || true
+          echo "--- templates ---" >> export.log
+          ls ~/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_STATUS}/ >> export.log || true
+          echo "--- keystore ---" >> export.log
+          ls -la ~/.android/ >> export.log || true
+          echo "--- build dir ---" >> export.log
+          ls -lh build/ >> export.log || true
+          echo "--- godot version ---" >> export.log
+          ./Godot_v${GODOT_VERSION}-${GODOT_STATUS}_linux.x86_64 --version >> export.log 2>&1 || true
+          cat export.log
+          test -f build/salt-and-iron.apk
+
+      - name: Upload APK artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: salt-and-iron-apk
+          path: build/salt-and-iron.apk
+          if-no-files-found: error
+
+      - name: Commit APK to repo
+        if: success()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add build/salt-and-iron.apk
+          git commit -m "Add built APK (salt-and-iron.apk) [skip ci]" || true
+          git push origin HEAD:${{ github.ref_name }} || true
+
+      - name: Upload logs artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: export-logs
+          path: |
+            export.log
+            import.log
+          if-no-files-found: ignore
+
+      - name: Push logs to ci-logs branch
+        if: failure()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b ci-logs || git checkout ci-logs
+          git add export.log import.log || true
+          git commit -m "CI logs from run ${{ github.run_id }}" || true
+          git push origin ci-logs || true

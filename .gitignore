@@ -1,0 +1,8 @@
+# Godot
+.godot/
+*.translation
+*.godot.tmp
+# OS / editors
+.DS_Store
+Thumbs.db
+# Note: build/salt-and-iron.apk is intentionally tracked so it can be downloaded from the repo.
