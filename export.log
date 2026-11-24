@@ -1,0 +1,39 @@
+Godot Engine v4.3.stable.official.77dcf97d8 - https://godotengine.org
+
+ERROR: Cannot export project with preset "Android" due to configuration errors:
+No export template found at the expected path:
+/home/runner/.local/share/godot/export_templates/4.3.stable/android_debug.apk
+No export template found at the expected path:
+/home/runner/.local/share/godot/export_templates/4.3.stable/android_release.apk
+
+   at: _fs_changed (editor/editor_node.cpp:1012)
+ERROR: Project export for preset "Android" failed.
+   at: _fs_changed (editor/editor_node.cpp:1028)
+cannot connect to daemon at tcp:5037: Connection refused
+export exit: 1
+--- env ---
+SELENIUM_JAR_PATH=/usr/share/java/selenium-server.jar
+JAVA_HOME_11_X64=/usr/lib/jvm/temurin-11-jdk-amd64
+JAVA_HOME_25_X64=/usr/lib/jvm/temurin-25-jdk-amd64
+JAVA_HOME=/opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.21-9/x64
+ANDROID_NDK=/usr/local/lib/android/sdk/ndk/27.3.13750724
+ANDROID_NDK_LATEST_HOME=/usr/local/lib/android/sdk/ndk/30.0.16248370
+JAVA_HOME_21_X64=/usr/lib/jvm/temurin-21-jdk-amd64
+JAVA_HOME_17_X64=/opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.21-9/x64
+ANDROID_NDK_HOME=/usr/local/lib/android/sdk/ndk/27.3.13750724
+ANDROID_HOME=/usr/local/lib/android/sdk
+ANDROID_SDK_ROOT=/usr/local/lib/android/sdk
+ANDROID_NDK_ROOT=/usr/local/lib/android/sdk/ndk/27.3.13750724
+PATH=/opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.21-9/x64/bin:/usr/local/lib/android/sdk/cmdline-tools/latest/bin:/usr/local/lib/android/sdk/platform-tools:/opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.21-9/x64/bin:/snap/bin:/home/runner/.local/bin:/opt/pipx_bin:/home/runner/.cargo/bin:/home/runner/.config/composer/vendor/bin:/usr/local/.ghcup/bin:/home/runner/.dotnet/tools:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+GITHUB_WORKFLOW=Build Android APK
+--- templates ---
+templates
+--- keystore ---
+total 12
+drwxr-xr-x  2 runner runner 4096 Nov 24 10:56 .
+drwxr-x--- 15 runner runner 4096 Nov 24 10:56 ..
+-rw-r--r--  1 runner runner 2650 Nov 24 10:56 debug.keystore
+--- build dir ---
+total 0
+--- godot version ---
+4.3.stable.official.77dcf97d8
