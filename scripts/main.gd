@@ -231,7 +231,7 @@ func _do_poker() -> void:
 	if state != ST_PLAY:
 		return
 	player.swing()
-	if ghost.state == ghost.ST_MANIFEST:
+	if ghost.state == 2:  # ST_MANIFEST
 		var d := player.global_position.distance_to(ghost.global_position)
 		if d < 2.8:
 			ghost.stun(3.0, player.global_position)
@@ -244,7 +244,7 @@ func _do_salt() -> void:
 	if _salt <= 0:
 		_show_subtitle("Нет соли! Ищите банки в доме.")
 		return
-	if ghost.state == ghost.ST_MANIFEST:
+	if ghost.state == 2:  # ST_MANIFEST
 		var d := player.global_position.distance_to(ghost.global_position)
 		if d < 9.0:
 			_salt -= 1
@@ -350,11 +350,11 @@ func _process(delta: float) -> void:
 		_lightning_t = randf_range(6.0, 14.0)
 	_lightning = maxf(0.0, _lightning - delta * 3.5)
 	var ghost_dist := 999.0
-	if ghost != null and ghost.state != ghost.ST_DORMANT:
+	if ghost != null and ghost.state != 0:  # ST_DORMANT
 		ghost_dist = player.global_position.distance_to(ghost.global_position)
-	if ghost.state == ghost.ST_MANIFEST:
+	if ghost.state == 2:  # ST_MANIFEST
 		_flicker = 0.45
-	elif ghost.state == ghost.ST_FADED:
+	elif ghost.state == 1:  # ST_FADED
 		_flicker = 0.12
 	else:
 		_flicker = 0.05
@@ -432,12 +432,12 @@ func _process(delta: float) -> void:
 		hud.burn = clampf(_burn, 0.0, 1.0)
 
 	# EMF и фонарь
-	if ghost.state == ghost.ST_DORMANT:
+	if ghost.state == 0:  # ST_DORMANT
 		hud.emf = 0.0
 		player.flash_flicker = 0.0
 	else:
 		hud.emf = clampf(1.0 - ghost_dist / 18.0, 0.0, 1.0)
-		if ghost.state == ghost.ST_MANIFEST:
+		if ghost.state == 2:  # ST_MANIFEST
 			player.flash_flicker = clampf(1.0 - ghost_dist / 12.0, 0.0, 1.0)
 		else:
 			player.flash_flicker = 0.0

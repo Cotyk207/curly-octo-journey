@@ -58,17 +58,42 @@ jobs:
 
       - name: Import project
         run: |
-          ./Godot_v${GODOT_VERSION}-${GODOT_STATUS}_linux.x86_64 --headless --import
+          ./Godot_v${GODOT_VERSION}-${GODOT_STATUS}_linux.x86_64 --headless --import 2>&1 | tee import.log
+          echo "import exit: ${PIPESTATUS[0]}" | tee -a import.log
 
       - name: Export APK
         run: |
           mkdir -p build
-          ./Godot_v${GODOT_VERSION}-${GODOT_STATUS}_linux.x86_64 --headless --export-release "Android" build/salt-and-iron.apk
-          ls -lh build/
+          set +e
+          ./Godot_v${GODOT_VERSION}-${GODOT_STATUS}_linux.x86_64 --headless --export-release "Android" build/salt-and-iron.apk > export.log 2>&1
+          echo "export exit: $?" >> export.log
+          echo "--- env ---" >> export.log
+          env | grep -i -E "android|java" >> export.log || true
+          echo "--- templates ---" >> export.log
+          ls ~/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_STATUS}/ >> export.log || true
+          echo "--- keystore ---" >> export.log
+          ls -la ~/.android/ >> export.log || true
+          echo "--- build dir ---" >> export.log
+          ls -lh build/ >> export.log || true
+          echo "--- godot version ---" >> export.log
+          ./Godot_v${GODOT_VERSION}-${GODOT_STATUS}_linux.x86_64 --version >> export.log 2>&1 || true
+          cat export.log
+          test -f build/salt-and-iron.apk
 
       - name: Upload APK artifact
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: salt-and-iron-apk
           path: build/salt-and-iron.apk
           if-no-files-found: error
+
+      - name: Upload logs artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: export-logs
+          path: |
+            export.log
+            import.log
+          if-no-files-found: ignore
